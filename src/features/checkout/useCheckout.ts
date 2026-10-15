@@ -34,41 +34,54 @@ export function useCheckout(userId: string) {
   const [submit, setSubmit] = useState<SubmitState>({ status: 'idle' })
   const inFlight = useRef(false)
 
+  const quoteRef = useRef<Quote | null>(null)
+
+  const replaceQuote = useCallback(
+    (newQuote: Quote | null, { clearPrevious = false }: { clearPrevious?: boolean }) => {
+      const old = quoteRef.current
+      if (old && newQuote && old.fingerprint !== newQuote.fingerprint) setPreviousQuote(old)
+      quoteRef.current = newQuote
+      setQuote(newQuote)
+      if (clearPrevious) setPreviousQuote(null)
+    },
+    [setQuote, setPreviousQuote],
+  )
+
   // Qualquer mudança de preço/disponibilidade em um item cotado invalida a cotação atual.
   useEffect(
     () =>
       realtime.onNftUpdated((e) => {
-        setQuote((q) => {
-          if (q && q.lines.some((l) => l.nftId === e.payload.nftId)) setQuoteStale(true)
-          return q
-        })
+        if (quoteRef.current?.lines.some((l) => l.nftId === e.payload.nftId)) {
+          setQuoteStale(true)
+        }
       }),
     [],
   )
 
-  const requestQuote = useCallback(async (network: Network) => {
-    setQuoting(true)
-    setQuoteError(null)
-    try {
-      const q = await api.quote(network)
-      setQuote((old) => {
-        if (old && old.fingerprint !== q.fingerprint) setPreviousQuote(old)
+  const requestQuote = useCallback(
+    async (network: Network): Promise<Quote | null> => {
+      setQuoting(true)
+      setQuoteError(null)
+      try {
+        const q = await api.quote(network)
+        replaceQuote(q, {})
+        setQuoteStale(false)
         return q
-      })
-      setQuoteStale(false)
-      return q
-    } catch (e) {
-      setQuoteError(toApiError(e))
-      return null
-    } finally {
-      setQuoting(false)
-    }
-  }, [])
+      } catch (err) {
+        setQuoteError(toApiError(err))
+        return null
+      } finally {
+        setQuoting(false)
+      }
+    },
+    [replaceQuote],
+  )
 
   const clearQuote = useCallback(() => {
     setQuote(null)
     setPreviousQuote(null)
     setQuoteStale(false)
+    quoteRef.current = null
   }, [])
 
   /** Envia (ou reenvia) uma tentativa. Nunca cria duas tentativas simultâneas. */
@@ -97,10 +110,7 @@ export function useCheckout(userId: string) {
               checkoutStorage.clearAttempt()
               const fresh = quoteSchema.safeParse((e.details as { quote?: unknown } | undefined)?.quote)
               if (fresh.success) {
-                setQuote((old) => {
-                  if (old) setPreviousQuote(old)
-                  return fresh.data
-                })
+                replaceQuote(fresh.data, {})
                 setQuoteStale(false)
               } else {
                 setQuoteStale(true)
@@ -119,7 +129,7 @@ export function useCheckout(userId: string) {
         inFlight.current = false
       }
     },
-    [qc, userId],
+    [qc, replaceQuote, userId],
   )
 
   const confirm = useCallback(
