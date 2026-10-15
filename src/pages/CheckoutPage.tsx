@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,8 +18,6 @@ import {
   type WalletProvider,
   type WalletSession,
 } from '@/api/contracts'
-import { api } from '@/api/endpoints'
-import { qk } from '@/api/queryKeys'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { ErrorState } from '@/components/ErrorState'
 import { Button } from '@/components/ui/button'
@@ -35,6 +32,7 @@ import { useCurrentUser } from '@/features/auth/useSession'
 import { useCart } from '@/features/cart/useCart'
 import { checkoutStorage } from '@/features/checkout/checkoutStorage'
 import { useCheckout } from '@/features/checkout/useCheckout'
+import { useConnectWallet, useDisconnectWallet, useWallets } from '@/features/wallets/useWallets'
 import { formatEth } from '@/lib/eth'
 import { focusFirstInvalid } from '@/lib/forms'
 import { cn, shortAddress } from '@/lib/utils'
@@ -63,8 +61,9 @@ export function CheckoutPage() {
   const navigate = useNavigate()
   const cart = useCart()
   useCartRealtimeNotice(cart.data)
-  const wallets = useQuery({ queryKey: qk.wallets(user.id), queryFn: ({ signal }) => api.listWallets({ signal }) })
+  const wallets = useWallets(user.id)
   const checkout = useCheckout(user.id)
+  const { resumePending, clearQuote } = checkout
   const [walletId, setWalletId] = useState<string | null>(null)
   const [walletSession, setWalletSession] = useState<WalletSession | null>(null)
   const [reviewOpen, setReviewOpen] = useState(false)
@@ -75,18 +74,22 @@ export function CheckoutPage() {
   const selectedWallet = wallets.data?.find((w) => w.id === walletId) ?? null
 
   // Retomada: pedido já criado => vai para o status; tentativa sem resposta => reenvia mesma chave.
+  const resumed = useRef(false)
   useEffect(() => {
+    if (resumed.current) return
+    resumed.current = true
     const attempt = checkoutStorage.getAttempt(user.id)
-    if (attempt?.orderId) {
-      void navigate({ to: '/orders/$orderId', params: { orderId: attempt.orderId }, replace: true })
-    } else if (attempt) {
-      toast.info('Retomando sua compra em andamento…')
-      void checkout.resumePending().then((order) => {
-        if (order) void navigate({ to: '/orders/$orderId', params: { orderId: order.id }, replace: true })
-      })
+    if (attempt) {
+      if (attempt.orderId) {
+        void navigate({ to: '/orders/$orderId', params: { orderId: attempt.orderId }, replace: true })
+      } else {
+        toast.info('Retomando sua compra em andamento…')
+        void resumePending().then((order) => {
+          if (order) void navigate({ to: '/orders/$orderId', params: { orderId: order.id }, replace: true })
+        })
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [user.id, navigate, resumePending])
 
   const draft = useMemo(() => checkoutStorage.getDraft<Partial<FormValues>>(user.id), [user.id])
   const form = useForm<FormValues>({
@@ -113,40 +116,40 @@ export function CheckoutPage() {
     return () => sub.unsubscribe()
   }, [form, user.id])
 
-  // Seleciona a carteira principal e preenche os campos derivados dela.
+  const pickWallet = useCallback(
+    (w: Wallet) => {
+      setWalletId(w.id)
+      setWalletSession(null)
+      clearQuote()
+      form.setValue('walletAddress', w.address, { shouldValidate: form.formState.isSubmitted })
+      form.setValue('walletProvider', w.provider)
+      setConnector(w.provider)
+      form.setValue('network', w.network)
+      form.setValue('secondaryAddress', w.secondaryAddress ?? '')
+      if (!form.getValues('referralCode')) form.setValue('referralCode', w.referralCode)
+    },
+    [clearQuote, form],
+  )
+
+  // Seleciona a carteira principal e preenche os campos derivados dela (só quando nenhuma foi escolhida).
   useEffect(() => {
     if (!wallets.data?.length || walletId) return
     const primary = wallets.data.find((w) => w.role === 'primary') ?? wallets.data[0]
     pickWallet(primary)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallets.data])
-
-  function pickWallet(w: Wallet) {
-    setWalletId(w.id)
-    setWalletSession(null)
-    checkout.clearQuote()
-    form.setValue('walletAddress', w.address, { shouldValidate: form.formState.isSubmitted })
-    form.setValue('walletProvider', w.provider)
-    setConnector(w.provider)
-    form.setValue('network', w.network)
-    form.setValue('secondaryAddress', w.secondaryAddress ?? '')
-    if (!form.getValues('referralCode')) form.setValue('referralCode', w.referralCode)
-  }
+  }, [wallets.data, walletId, pickWallet])
 
   const network = form.watch('network')
 
-  const connect = useMutation({
-    mutationFn: () => api.connectWallet(walletId!, network, connector),
-    onSuccess: (s) => {
-      setWalletSession(s)
-      toast.success(`${WALLET_PROVIDER_LABEL[s.provider]} conectada na rede ${NETWORK_LABEL[s.network]}`)
-    },
-    onError: (e) => toast.error(e.message),
-  })
+  const connect = useConnectWallet()
+  const disconnectSession = useDisconnectWallet()
+  const connectWallet = () => {
+    if (!walletId) return
+    connect.mutate({ walletId, network, provider: connector }, { onSuccess: setWalletSession })
+  }
   const disconnect = () => {
-    if (walletSession) void api.disconnectWallet(walletSession.id).catch(() => undefined)
+    if (walletSession) disconnectSession.mutate(walletSession.id)
     setWalletSession(null)
-    checkout.clearQuote()
+    clearQuote()
     toast.info('Carteira desconectada')
   }
 
@@ -154,10 +157,9 @@ export function CheckoutPage() {
   useEffect(() => {
     if (walletSession && walletSession.network !== network) {
       setWalletSession(null)
-      checkout.clearQuote()
+      clearQuote()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network])
+  }, [clearQuote, walletSession, network])
 
   const onReview = form.handleSubmit(
     async (values) => {
@@ -195,7 +197,7 @@ export function CheckoutPage() {
     })
     if (order) {
       setReviewOpen(false)
-      void navigate({ to: '/orders/$orderId', params: { orderId: order.id } })
+      void navigate({ to: '/orders/$orderId', params: { orderId: order.id }, replace: true })
     }
   }
 
@@ -540,7 +542,7 @@ export function CheckoutPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => connect.mutate()}
+                    onClick={connectWallet}
                     loading={connect.isPending}
                     disabled={!network}
                   >
