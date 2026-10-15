@@ -1,0 +1,10 @@
+dist
+node_modules
+coverage
+playwright-report
+test-results
+reports
+public/mockServiceWorker.js
+package-lock.json
+tests/e2e/__screenshots__
+*.bundle

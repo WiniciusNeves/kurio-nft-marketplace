@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#140d0b" />
+    <meta
+      name="description"
+      content="Kurio — marketplace de NFTs. Descubra, colecione e compre arte digital verificada de criadores emergentes e consagrados."
+    />
+    <title>Kurio — Marketplace de NFTs</title>
+    <!-- Cor de fundo imediata: evita "flash" branco antes do CSS/JS carregarem. -->
+    <style>
+      html,
+      body {
+        background: #140d0a;
+        color: #f5f1eb;
+      }
+    </style>
+    <!-- CSS carregado direto pelo HTML (e não pelo JS): estilos aplicados antes do app/mocks iniciarem. -->
+    <link rel="stylesheet" href="/src/styles/globals.css" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/roboto-mono-latin-400-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/roboto-mono-latin-700-normal.woff2" />
+    <link rel="preload" as="image" href="/nfts/emerald-ape.webp" fetchpriority="high" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      App shell estático da página inicial (acima da dobra), exibido enquanto MSW + app carregam.
+      Usa as mesmas classes/medidas do componente <Hero/> para não gerar layout shift; o React
+      substitui este conteúdo no primeiro render. Só é aplicado em "/".
+    -->
+    <template id="home-shell">
+      <div class="hidden md:block">
+        <header class="container-page">
+          <div class="flex h-[68px] items-center justify-between gap-4 border-b border-line">
+            <span class="text-sm font-bold tracking-[0.2em]">KURIO</span>
+          </div>
+        </header>
+      </div>
+      <main class="min-h-[100dvh] pt-4 md:pt-0" aria-busy="true">
+        <section class="container-page">
+          <div class="relative mt-3 hidden items-center gap-10 md:grid md:grid-cols-[1fr_minmax(280px,450px)]">
+            <div class="px-0 lg:px-12">
+              <p class="text-sm tracking-[0.1em]">Bem-vindo à Kurio</p>
+              <p class="mt-4 text-3xl leading-[1.6] font-bold uppercase lg:text-[43px] lg:leading-[70px]">
+                Seja dono do futuro<br />da arte digital
+              </p>
+              <p class="mt-3 max-w-[460px] text-sm leading-6 text-muted">
+                Descubra NFTs selecionados de criadores emergentes e consagrados. Colecione arte digital rara, apoie
+                artistas e tenha uma parte da cultura da internet.
+              </p>
+              <span
+                class="mt-12 inline-flex h-10 items-center rounded-sm bg-primary px-7 text-[15px] font-bold text-primary-foreground uppercase"
+                >Explorar</span
+              >
+            </div>
+            <img
+              src="/nfts/emerald-ape.webp"
+              alt=""
+              width="450"
+              height="450"
+              fetchpriority="high"
+              class="aspect-square w-full rounded-[16px] object-cover"
+            />
+          </div>
+          <div class="relative mt-4 overflow-hidden rounded-[24px] bg-surface p-4 md:hidden">
+            <div class="relative grid grid-cols-[1fr_auto] gap-3">
+              <div>
+                <p class="text-xs font-bold">Bem-vindo à Kurio</p>
+                <p class="mt-3 text-lg leading-snug font-bold uppercase">Seja dono da cultura digital</p>
+                <p class="mt-2 text-xs leading-5 text-muted">Descubra NFTs selecionados de criadores do mundo todo.</p>
+              </div>
+              <div class="relative w-[138px]">
+                <img
+                  src="/nfts/emerald-ape.webp"
+                  alt=""
+                  width="138"
+                  height="138"
+                  fetchpriority="high"
+                  class="aspect-square w-full rounded-xl object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </template>
+    <script>
+      if (location.pathname === '/') {
+        var t = document.getElementById('home-shell')
+        document.getElementById('root').appendChild(t.content.cloneNode(true))
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

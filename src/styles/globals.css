@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+
+/* Roboto Mono (fonte do Figma) self-hosted em /public/fonts — subset latin, URLs estáveis para preload. */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/roboto-mono-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/roboto-mono-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/roboto-mono-latin-700-normal.woff2') format('woff2');
+}
+
+/*
+ * Tokens extraídos das variáveis do Figma (color/*, font/family).
+ * Paleta marrom escura + laranja. Tipografia monoespaçada.
+ */
+@theme {
+  --font-sans: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-background: #140d0a;
+  --color-surface: #241612;
+  --color-surface-2: #2e1d17;
+  --color-band: #38220f;
+  --color-line: #3f2319;
+  --color-line-soft: #55321f;
+  --color-foreground: #f5f1eb;
+  --color-muted: #cfb28c;
+  --color-subtle: #b39463;
+  --color-primary: #d28a4c;
+  --color-primary-strong: #e89b55;
+  --color-primary-foreground: #140d0a;
+  --color-danger: #ff8a7a;
+  --color-success: #8fd19e;
+  --color-warning: #f2c46d;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 12px;
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    letter-spacing: 0.02em;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary-strong);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+  img {
+    max-width: 100%;
+  }
+}
+
+@layer components {
+  .skeleton {
+    background-color: var(--color-surface-2);
+    background-image: linear-gradient(90deg, var(--color-surface-2) 0px, #3a261e 120px, var(--color-surface-2) 240px);
+    background-size: 800px 100%;
+    background-repeat: no-repeat;
+    animation: var(--animate-shimmer);
+  }
+  .container-page {
+    @apply mx-auto w-full max-w-[1200px] px-4 md:px-6 xl:px-0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Botões de ação principais no mobile (Figma: gradiente laranja). */
+@utility cta-gradient {
+  background-image: linear-gradient(100deg, #dc9a5d 0%, #c98447 55%, #b07040 100%);
+}
