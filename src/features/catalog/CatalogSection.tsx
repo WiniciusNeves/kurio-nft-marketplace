@@ -9,6 +9,7 @@ import {
   type CatalogTab,
   type Category,
   type Network,
+  type Rarity,
 } from '@/api/contracts'
 import { api } from '@/api/endpoints'
 import { qk } from '@/api/queryKeys'
@@ -29,6 +30,12 @@ const TABS: Array<{ value: CatalogTab; label: string }> = [
   { value: 'all', label: 'Todos os NFTs' },
   { value: 'new', label: 'Novos lançamentos' },
   { value: 'trending', label: 'Em alta' },
+]
+
+const rarityLabel: Array<{ value: Rarity; label: string }> = [
+  { value: 'raro', label: 'Raro' },
+  { value: 'lendario', label: 'Lendário' },
+  { value: 'comum', label: 'Comum' },
 ]
 
 export function useCatalog(search: CatalogSearch) {
@@ -57,7 +64,10 @@ export function CatalogSection({
   const showSkeleton = catalog.isPending
   const updating = catalog.isFetching && !catalog.isPending
   const activeFilters =
-    (search.category?.length ?? 0) + (search.network?.length ?? 0) + (search.minPrice || search.maxPrice ? 1 : 0)
+    (search.category?.length ?? 0) +
+    (search.network?.length ?? 0) +
+    (search.minPrice || search.maxPrice ? 1 : 0) +
+    (search.rarity ? 1 : 0)
 
   return (
     <section id="catalogo" aria-labelledby="catalogo-titulo" className="scroll-mt-6">
@@ -209,6 +219,7 @@ export function CatalogSection({
                           network: undefined,
                           minPrice: undefined,
                           maxPrice: undefined,
+                          rarity: undefined,
                           tab: undefined,
                         },
                         { resetPage: true },
@@ -441,6 +452,33 @@ function Filters({
                     {n.label}
                   </span>
                   <span className="tabular-nums">({n.count})</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </fieldset>
+
+      <fieldset className="mt-8">
+        <legend className="mb-3 text-lg font-bold">Raridade</legend>
+        <ul className="flex flex-col">
+          {rarityLabel.map((r) => {
+            const active = search.rarity === r.value
+            return (
+              <li key={r.value}>
+                <button
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSearch({ rarity: active ? undefined : r.value }, { resetPage: true })}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-sm px-3 py-2.5 text-left text-[15px]',
+                    active ? 'bg-surface-2 font-bold text-primary-strong' : 'text-muted hover:text-primary-strong',
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    {active && <span aria-hidden>✓</span>}
+                    {r.label}
+                  </span>
                 </button>
               </li>
             )

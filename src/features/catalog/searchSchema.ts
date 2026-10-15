@@ -14,6 +14,7 @@ export const catalogSearchSchema = z.object({
   sort: sortSchema.optional().catch(undefined),
   tab: tabSchema.optional().catch(undefined),
   page: z.number().int().min(1).max(999).optional().catch(undefined),
+  rarity: z.enum(['raro', 'lendario', 'comum']).optional().catch(undefined),
 })
 export type CatalogSearch = z.infer<typeof catalogSearchSchema>
 
@@ -30,5 +31,6 @@ export function toCatalogQuery(s: CatalogSearch): CatalogQuery {
     tab: s.tab ?? 'all',
     page: s.page ?? 1,
     pageSize: PAGE_SIZE,
+    rarity: s.rarity,
   }
 }
