@@ -1,5 +1,9 @@
 # Kurio — Marketplace de NFTs
 
+**Demo publicada:** https://kurio-nft-marketplace-dusky.vercel.app
+
+> A demo roda com os mocks ligados (MSW no navegador), incluindo REST e Socket.IO. Para testar os cenários de falha, use o botão **Mocks** (canto inferior esquerdo no desktop, ou o link "Painel de simulação (mocks)" no rodapé do mobile) ou adicione `?mock-scenario=<id>` à URL. Para restaurar os dados, use `?mock-reset=1`.
+
 Implementação do desafio frontend **Kurio** em React + TypeScript. Inclui catálogo, detalhe, carrinho, pagamento, recibo, login/cadastro, perfil e carteiras, nas versões desktop e mobile.
 
 API, autenticação, carteiras, pagamentos e eventos em tempo real são **simulados com MSW**: REST e Socket.IO via `@mswjs/socket.io-binding`. A simulação roda no navegador, inclusive no build publicado.
@@ -180,5 +184,7 @@ Para publicar:
 1. Suba o repositório no GitHub.
 2. Na Vercel, clique em **Add New → Project**, selecione o repositório e mantenha o preset **Vite**. O `vercel.json` sobrescreve o build.
 3. Faça o deploy. Não é preciso configurar variáveis de ambiente.
+
+URL de produção: https://kurio-nft-marketplace-dusky.vercel.app. Cada push na `main` gera um deploy novo automaticamente.
 
 Netlify e Cloudflare Pages também funcionam: use `npm run build:demo`, publique `dist/` e configure o fallback de SPA para `/index.html`.
