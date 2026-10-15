@@ -60,6 +60,8 @@ function useSessionLifecycle() {
   const userId = state.status === 'authenticated' ? state.session.user.id : null
   const hrefRef = useRef(href)
   hrefRef.current = href
+  const pathnameRef = useRef(pathname)
+  pathnameRef.current = pathname
 
   useQuery({
     queryKey: ['session', token],
@@ -83,11 +85,10 @@ function useSessionLifecycle() {
     qc.removeQueries({ queryKey: qk.userAll })
     qc.removeQueries({ queryKey: qk.cartAll })
     toast.warning('Sua sessão expirou. Entre novamente para continuar.')
-    if (!pathname.startsWith('/login')) {
-      void navigate({ to: '/login', search: { redirect: hrefRef.current, reason: 'expired' } })
+    if (!pathnameRef.current.startsWith('/login')) {
+      void navigate({ to: '/login', search: { redirect: hrefRef.current, reason: 'expired' }, replace: true })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.status])
+  }, [state.status, qc, navigate])
 
   // Foco no conteúdo a cada navegação (leitores de tela anunciam a nova página).
   const first = useRef(true)
