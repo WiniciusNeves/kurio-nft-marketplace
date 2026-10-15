@@ -24,6 +24,9 @@ export const NETWORK_LABEL: Record<Network, string> = {
   solana: 'Solana',
 }
 
+export const raritySchema = z.enum(['raro', 'lendario', 'comum'])
+export type Rarity = z.infer<typeof raritySchema>
+
 export const categorySchema = z.enum([
   'arte-digital',
   'fotografia',
@@ -161,6 +164,7 @@ export const catalogQuerySchema = z.object({
   tab: tabSchema.optional(),
   page: z.number().int().positive().optional(),
   pageSize: z.number().int().positive().max(48).optional(),
+  rarity: raritySchema.optional(),
 })
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>
 

@@ -41,6 +41,7 @@ export function catalogParams(q: CatalogQuery) {
   if (q.tab) p.set('tab', q.tab)
   if (q.page) p.set('page', String(q.page))
   if (q.pageSize) p.set('pageSize', String(q.pageSize))
+  if (q.rarity) p.set('rarity', q.rarity)
   return p
 }
 
