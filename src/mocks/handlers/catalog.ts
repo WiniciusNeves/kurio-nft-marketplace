@@ -4,6 +4,7 @@ import {
   NETWORK_LABEL,
   categorySchema,
   networkSchema,
+  raritySchema,
   sortSchema,
   tabSchema,
   type CatalogResponse,
@@ -33,6 +34,20 @@ export const catalogHandlers = [
     const tab = tabSchema.catch('all').parse(p.get('tab') ?? 'all')
     const page = Math.max(1, Number(p.get('page')) || 1)
     const pageSize = Math.min(48, Math.max(1, Number(p.get('pageSize')) || 9))
+    const rawRarity = p.get('rarity')
+    const parsed = raritySchema.safeParse(rawRarity)
+    if (rawRarity && !parsed.success) {
+      return errorResponse(422, 'VALIDATION_ERROR', 'Raridade inválida.', {
+        fieldErrors: { rarity: 'Raridade inválida' },
+      })
+    }
+    const rarity = parsed.success ? parsed.data : undefined
+
+    if (rarity && !['raro', 'lendario', 'comum'].includes(rarity)) {
+      return errorResponse(422, 'VALIDATION_ERROR', 'Raridade inválida.', {
+        fieldErrors: { rarity: 'Raridade inválida' },
+      })
+    }
 
     if (minPrice && maxPrice && eth.cmp(minPrice, maxPrice) > 0) {
       return errorResponse(422, 'VALIDATION_ERROR', 'Faixa de preço inválida.', {
@@ -55,6 +70,7 @@ export const catalogHandlers = [
       if (networks.length && !networks.includes(n.network)) return false
       if (minPrice && eth.cmp(n.price, minPrice) < 0) return false
       if (maxPrice && eth.cmp(n.price, maxPrice) > 0) return false
+      if (rarity && (n.rarity ?? 'comum') !== rarity) return false
       return true
     })
 
