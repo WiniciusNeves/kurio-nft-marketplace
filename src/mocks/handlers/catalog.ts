@@ -65,14 +65,17 @@ export const catalogHandlers = [
       return true
     })
 
-    const filtered = base.filter((n) => {
-      if (categories.length && !categories.includes(n.category)) return false
-      if (networks.length && !networks.includes(n.network)) return false
+    // `ignore` deixa de fora o filtro da própria facet, para as contagens dela refletirem só os demais filtros.
+    const matches = (n: (typeof all)[number], ignore?: 'category' | 'network') => {
+      if (ignore !== 'category' && categories.length && !categories.includes(n.category)) return false
+      if (ignore !== 'network' && networks.length && !networks.includes(n.network)) return false
       if (minPrice && eth.cmp(n.price, minPrice) < 0) return false
       if (maxPrice && eth.cmp(n.price, maxPrice) > 0) return false
       if (rarity && (n.rarity ?? 'comum') !== rarity) return false
       return true
-    })
+    }
+
+    const filtered = base.filter((n) => matches(n))
 
     const sorted = [...filtered].sort((a, b) => {
       switch (sort) {
@@ -104,12 +107,12 @@ export const catalogHandlers = [
         categories: (Object.keys(CATEGORY_LABEL) as Category[]).map((c) => ({
           value: c,
           label: CATEGORY_LABEL[c],
-          count: base.filter((n) => n.category === c).length,
+          count: base.filter((n) => n.category === c && matches(n, 'category')).length,
         })),
         networks: (Object.keys(NETWORK_LABEL) as Network[]).map((n) => ({
           value: n,
           label: NETWORK_LABEL[n],
-          count: base.filter((x) => x.network === n).length,
+          count: base.filter((x) => x.network === n && matches(x, 'network')).length,
         })),
         priceRange: {
           min: prices.length ? prices.reduce((a, b) => (eth.cmp(a, b) < 0 ? a : b)) : '0',
